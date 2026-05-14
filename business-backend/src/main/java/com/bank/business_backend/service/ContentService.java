@@ -6,7 +6,7 @@ import com.bank.business_backend.repository.ContentRepository;
 import com.bank.business_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
+import com.bank.business_backend.client.FastApiKnowledgeClient;
 import java.util.List;
 
 @Service
@@ -15,7 +15,7 @@ public class ContentService {
 
     private final ContentRepository contentRepository;
     private final UserRepository userRepository;
-
+    private final FastApiKnowledgeClient fastApiKnowledgeClient;
     public Content createContent(CreateContentRequest request) {
         User user = userRepository.findById(request.getCreatedByUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -41,8 +41,13 @@ public class ContentService {
     }
 
     public Content publishContent(Long id) {
-        Content content = getContentById(id);
-        content.setStatus(ContentStatus.PUBLISHED);
-        return contentRepository.save(content);
-    }
+    Content content = getContentById(id);
+    content.setStatus(ContentStatus.PUBLISHED);
+
+    Content savedContent = contentRepository.save(content);
+
+    fastApiKnowledgeClient.sendContentToKnowledgeBase(savedContent);
+
+    return savedContent;
+}
 }
